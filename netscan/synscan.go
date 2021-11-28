@@ -1,6 +1,7 @@
-package scanner
+package netscan
 
 import (
+	"fmt"
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
 	"log"
@@ -23,7 +24,7 @@ func localIPPort(dstIp net.IP) (net.IP, int) {
 	return nil, -1
 }
 
-func SynScan(hostname string, port int, results *[]ScanResult, wg *sync.WaitGroup, srcIp net.IP, sPort int) {
+func synScan(hostname string, port int, results *[]scanResult, wg *sync.WaitGroup, srcIp net.IP, sPort int) {
 	defer wg.Done()
 
 	dstAddrs, err := net.LookupIP(hostname)
@@ -38,7 +39,7 @@ func SynScan(hostname string, port int, results *[]ScanResult, wg *sync.WaitGrou
 	//srcIp, sPort := localIPPort(dstIp)
 	srcPort := layers.TCPPort(sPort)
 
-	// Our IP header... not used, but necessary for TCP checksumming.
+	// Our _IP header... not used, but necessary for TCP checksumming.
 	ip := &layers.IPv4{
 		SrcIP:    srcIp,
 		DstIP:    dstIp,
@@ -52,11 +53,15 @@ func SynScan(hostname string, port int, results *[]ScanResult, wg *sync.WaitGrou
 		SYN:     true,
 		Window:  14600,
 	}
-	tcp.SetNetworkLayerForChecksum(ip)
+	err = tcp.SetNetworkLayerForChecksum(ip)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 
 	// Serialize.  Note:  we only serialize the TCP layer, because the
 	// socket we get with net.ListenPacket wraps our data in IPv4 packets
-	// already.  We do still need the IP layer to compute checksums
+	// already.  We do still need the _IP layer to compute checksums
 	// correctly, though.
 	buf := gopacket.NewSerializeBuffer()
 	opts := gopacket.SerializeOptions{
@@ -72,7 +77,12 @@ func SynScan(hostname string, port int, results *[]ScanResult, wg *sync.WaitGrou
 		log.Println(err)
 		return
 	}
-	defer conn.Close()
+	defer func(conn net.PacketConn) {
+		err := conn.Close()
+		if err != nil {
+			fmt.Println(err)
+		}
+	}(conn)
 	log.Println("writing request")
 	if _, err := conn.WriteTo(buf.Bytes(), &net.IPAddr{IP: dstIp}); err != nil {
 		log.Fatal(err)
@@ -99,9 +109,9 @@ func SynScan(hostname string, port int, results *[]ScanResult, wg *sync.WaitGrou
 
 				if tcp.DstPort == srcPort {
 					if tcp.SYN && tcp.ACK {
-						log.Printf("Port %d is OPEN\n", dstPort)
+						log.Printf("port %d is OPEN\n", dstPort)
 					} else {
-						log.Printf("Port %d is CLOSED\n", dstPort)
+						log.Printf("port %d is CLOSED\n", dstPort)
 					}
 					return
 				}

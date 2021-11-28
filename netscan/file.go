@@ -1,21 +1,20 @@
-package scanner
+package netscan
 
 import (
 	"bufio"
 	"fmt"
-	"github.com/MohammedBenhelli/GoNetworkLab/arg"
 	"github.com/fatih/color"
 	"os"
 )
 
-func FileScan(arguments arg.FilterArg, results *[]ScanResult) {
-	ipList := fileToTab(arguments.Ip())
+func fileScan(arguments filterArg, results *[]scanResult) {
+	ipList := fileToTab(arguments.file)
 	for _, ip := range ipList {
-		arguments.SetIp(ip)
+		arguments.ip = ip
 		color.Green("Ip tested %s\n", ip)
-		InitialScan(arguments, results)
+		initialScan(arguments, results)
 		printResult(*results)
-		*results = []ScanResult{}
+		*results = []scanResult{}
 	}
 }
 
@@ -31,12 +30,17 @@ func fileToTab(path string) []string {
 			result = append(result, scanner.Text())
 		}
 	}
-	defer file.Close()
+	defer func(file *os.File) {
+		err := file.Close()
+		if err != nil {
+			panic(err)
+		}
+	}(file)
 	return result
 }
 
-func printResult(results []ScanResult) {
+func printResult(results []scanResult) {
 	for i := 0; i < len(results); i++ {
-		fmt.Printf("%+v\n", results[i])
+		fmt.Printf("%s/%s\t%s\t%s\n", results[i].port, results[i].protocol, results[i].state, results[i].service)
 	}
 }

@@ -1,26 +1,24 @@
 package main
 
 import (
-	"fmt"
-	"github.com/MohammedBenhelli/GoNetworkLab/arg"
-	"github.com/MohammedBenhelli/GoNetworkLab/scanner"
-)
-
-var (
-	results []scanner.ScanResult
+	"github.com/MohammedBenhelli/GoNetworkLab/netscan"
+	"github.com/akamensky/argparse"
+	"os"
 )
 
 func main() {
-	arguments := arg.Arg()
-	fmt.Printf("%+v\n", arguments)
-	if !arguments.File() {
-		scanner.InitialScan(arguments, &results)
-	} else {
-		scanner.FileScan(arguments, &results)
+	parser := argparse.NewParser("NetworkLab", "Some Go Network tools")
+	tool := parser.String("t", "tool", &argparse.Options{Required: true, Help: "The tool name"})
+
+	_ = parser.Parse(os.Args)
+	if len(*tool) == 0 {
+		panic(parser.Usage(""))
 	}
-	//scanner.LocalIp()
-	//ifs, _ := pcap.FindAllDevs()
-	//for i := range ifs {
-	//	fmt.Println(ifs[i])
-	//}
+
+	switch *tool {
+	case "netscan":
+		netscan.Main()
+	default:
+		netscan.Main()
+	}
 }

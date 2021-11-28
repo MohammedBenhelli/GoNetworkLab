@@ -1,4 +1,4 @@
-package scanner
+package netscan
 
 import (
 	"fmt"
@@ -6,30 +6,24 @@ import (
 	"net"
 )
 
-type MacResult struct {
-	MAC string
-	IP  net.IP
-	Mask string
-}
-
-func GetMacAddr() ([]MacResult, error) {
+func getMacAddr() ([]macResult, error) {
 	ifaces, err := net.Interfaces()
 	if err != nil {
 		return nil, err
 	}
-	var results []MacResult
+	var results []macResult
 	for _, ifa := range ifaces {
 		address, _ := ifa.Addrs()
 		for _, addr := range address {
 			switch v := addr.(type) {
 				case *net.IPNet:
-					a := MacResult{ifa.HardwareAddr.String(), v.IP, v.IP.DefaultMask().String()}
-					if a.MAC != "" {
+					a := macResult{ifa.HardwareAddr.String(), v.IP, v.IP.DefaultMask().String()}
+					if a._MAC != "" {
 						results = append(results, a)
 					}
 				case *net.IPAddr:
-					a := MacResult{ifa.HardwareAddr.String(), v.IP, v.IP.DefaultMask().String()}
-					if a.MAC != "" {
+					a := macResult{ifa.HardwareAddr.String(), v.IP, v.IP.DefaultMask().String()}
+					if a._MAC != "" {
 						results = append(results, a)
 					}
 			}
@@ -39,8 +33,8 @@ func GetMacAddr() ([]MacResult, error) {
 	return results, nil
 }
 
-func LocalIp()  {
-	as, err := GetMacAddr()
+func localIp()  {
+	as, err := getMacAddr()
 	if err != nil {
 		log.Fatal(err)
 	}

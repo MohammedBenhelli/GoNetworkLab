@@ -1,8 +1,9 @@
-module GoNetworkLab
+module github.com/MohammedBenhelli/GoNetworkLab
 
 go 1.17
 
 require (
+	github.com/akamensky/argparse v1.3.1
 	github.com/fatih/color v1.13.0
 	github.com/google/gopacket v1.1.19
 )
